@@ -1,6 +1,6 @@
 # Project Title: Earnings Quality Analysis & Interactive Tool (Food & Beverage Sector)
 
-**Product Link / Demo:** [Insert your Streamlit app link here or your demo video link]
+**Product Link / Demo:** https://acc102-data-appuct-ryzcejzwsd3xmrmfa8ie6h.streamlit.app/#industry-peer-ranking-accrual-ratio
 
 ## 1. Problem & User
 This project addresses the challenge of evaluating "earnings quality"—the extent to which reported profits are backed by actual cash—within the food and beverage industry. It is designed for **investors, financial analysts, and accounting students** who need to identify potential financial risks beyond simple revenue growth metrics.
