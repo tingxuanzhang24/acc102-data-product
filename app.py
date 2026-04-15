@@ -2,25 +2,22 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
-import numpy as np
 
 # 1. Page Configuration
 st.set_page_config(
-    page_title="Earnings Quality Diagnostic Tool", 
+    page_title="Earnings Quality Auditor", 
     page_icon="⚖️", 
     layout="wide"
 )
 
-# Professional Visual Styling (CSS)
+# Custom Professional Styling
 st.markdown("""
     <style>
     .main { background-color: #f8f9fa; }
+    .stMetric { background-color: #ffffff; padding: 20px; border-radius: 12px; border: 1px solid #eee; }
     .welcome-card {
         padding: 40px; background-color: #ffffff; border-radius: 12px;
         border-left: 10px solid #003366; box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-    }
-    div.stMetric { 
-        background-color: #ffffff; padding: 20px; border-radius: 10px; border: 1px solid #e9ecef; 
     }
     </style>
 """, unsafe_allow_html=True)
@@ -28,140 +25,126 @@ st.markdown("""
 @st.cache_data
 def load_data():
     df = pd.read_csv("cleaned_data.csv")
-    firm_summary = pd.read_csv("firm_summary.csv")
-    return df, firm_summary
+    summary = pd.read_csv("firm_summary.csv")
+    return df, summary
 
-df, firm_summary = load_data()
+# Load Data
+try:
+    df, firm_summary = load_data()
+except Exception as e:
+    st.error(f"Data loading failed: {e}")
+    st.stop()
 
-# --- 2. Enhanced Sidebar: Structured Console ---
-st.sidebar.title("📊 Analytics Console")
+# --- 2. SIDEBAR: The 'Analytical Remote Control' ---
+st.sidebar.title("🎮 Analysis Console")
 
-# Navigation Menu
-nav_choice = st.sidebar.radio("Navigation", ["Deep Analysis", "Methodology", "Global Industry View"])
+st.sidebar.subheader("📍 1. Data Selection")
+ticker_list = sorted(df['tic'].unique())
+ticker = st.sidebar.selectbox("Choose a Firm", ["--- Select a Firm ---"] + ticker_list)
+year_range = st.sidebar.slider("Timeline Filter", 2018, 2024, (2020, 2024))
 
 st.sidebar.divider()
 
-# Entity Selection Module
-st.sidebar.subheader("🎯 Selection")
-sorted_tickers = sorted(df['tic'].unique())
-ticker_choice = st.sidebar.selectbox(
-    "Select Ticker Symbol", 
-    options=["--- Select a Firm ---"] + sorted_tickers
+st.sidebar.subheader("⚙️ 2. Audit Sensitivity")
+# This slider directly controls the Red/Green status on the main page
+corr_threshold = st.sidebar.slider(
+    "Alert Threshold (Correlation)", 
+    min_value=0.0, max_value=1.0, value=0.6,
+    help="Determines the minimum NI-OCF correlation required for a 'Healthy' status."
 )
-
-# Advanced Analysis Settings
-with st.sidebar.expander("🛠️ Analysis Settings", expanded=True):
-    min_yr, max_yr = int(df['fyear'].min()), int(df['fyear'].max())
-    year_range = st.sidebar.slider("Analysis Timeline", min_yr, max_yr, (min_yr, max_yr))
-    
-    st.markdown("**Diagnostic Sensitivity**")
-    corr_threshold = st.slider(
-        "Alert Threshold (Correlation)", 
-        0.0, 1.0, 0.5, 
-        help="Alerts trigger if NI-OCF correlation falls below this value."
-    )
-    show_benchmark = st.checkbox("Overlay Industry Median", value=True)
+show_industry_avg = st.sidebar.checkbox("Overlay Industry Median", value=True)
 
 st.sidebar.divider()
-st.sidebar.info(f"Data Source: WRDS Compustat\nLast Updated: April 2026")
+st.sidebar.info("Methodology: Sloan (1996) Accrual Anomaly")
+st.sidebar.caption("Data Source: WRDS Compustat")
 
-# --- 3. Main Content Logic ---
+# --- 3. MAIN DASHBOARD CONTENT ---
+st.title("⚖️ Earnings Quality Diagnostic Tool")
 
-if nav_choice == "Deep Analysis":
-    if ticker_choice == "--- Select a Firm ---":
-        st.markdown("""
-            <div class="welcome-card">
-                <h1>🔍 Earnings Quality Diagnostic Tool</h1>
-                <p style='font-size: 1.2em; color: #555;'>
-                    Please select a firm from the <b>Selection</b> panel on the left to begin your audit.
-                </p>
-                <hr>
-                <p>High-quality earnings are backed by actual cash flows. This tool uses <b>Accrual Ratio</b> and 
-                <b>Statistical Correlations</b> to detect potential financial reporting risks.</p>
-            </div>
-        """, unsafe_allow_html=True)
+if ticker == "--- Select a Firm ---":
+    # --- Landing State ---
+    st.markdown("""
+        <div class="welcome-card">
+            <h1>Welcome to the Financial Audit Portal</h1>
+            <p style='font-size: 1.2em; color: #555;'>
+                High-quality profits are backed by cash flows. Use the <b>Control Panel</b> on the left to select a company and adjust the audit sensitivity.
+            </p>
+        </div>
+    """, unsafe_allow_html=True)
+    
+    st.subheader("🌐 Global Sector Distribution")
+    fig_intro = px.scatter(df, x='Rev_Growth', y='Accrual_Ratio', color='Type', 
+                         hover_name='tic', size='at', template="plotly_white")
+    st.plotly_chart(fig_intro, use_container_width=True)
+
+else:
+    # --- Data Processing for Selected Firm ---
+    data = df[(df['tic'] == ticker) & (df['fyear'].between(year_range[0], year_range[1]))].sort_values('fyear')
+    
+    if data.empty:
+        st.warning(f"No data available for {ticker} in the selected time range.")
     else:
-        # Data Filtering
-        ticker = ticker_choice
-        company_data = df[(df['tic'] == ticker) & (df['fyear'].between(year_range[0], year_range[1]))].sort_values('fyear')
-        
         # Core Calculations
-        correlation = company_data['ni'].corr(company_data['oancf']) if len(company_data) > 1 else 0
-        latest_ratio = company_data['Accrual_Ratio'].iloc[-1]
-        avg_ratio = company_data['Accrual_Ratio'].mean()
+        correlation = data['ni'].corr(data['oancf']) if len(data) > 1 else 0
+        latest_accrual = data['Accrual_Ratio'].iloc[-1]
+        avg_accrual = data['Accrual_Ratio'].mean()
 
-        st.header(f"📈 Financial Health Report: {ticker}")
-        
-        # Dynamic Diagnostic Header (Keep original logic)
+        # --- DYNAMIC DIAGNOSTIC HEADER ---
+        # Immediate feedback based on Sidebar Threshold
         if correlation < corr_threshold:
-            st.error(f"⚠️ **High Alert**: Low Earnings Quality. Profit-Cash decoupling detected (Corr: {correlation:.2f})")
-        elif latest_ratio > 0.15:
-            st.warning(f"⚠️ **Warning**: Aggressive Accruals detected in the latest period.")
+            st.error(f"🔴 **CRITICAL ALERT**: {ticker} shows poor earnings quality. Correlation ({correlation:.2f}) is below your threshold ({corr_threshold}).")
         else:
-            st.success(f"✅ **Healthy Profile**: Earnings are strongly backed by operating cash flows.")
+            st.success(f"🟢 **AUDIT PASSED**: {ticker} maintains healthy earnings quality with strong cash backing (Correlation: {correlation:.2f}).")
 
-        # KPI Metrics
+        # KPI Metrics Row
         col1, col2, col3 = st.columns(3)
         with col1:
-            st.metric("Latest Accrual Ratio", f"{latest_ratio:.4f}", 
-                      delta=f"{latest_ratio - avg_ratio:.4f}", delta_color="inverse")
+            st.metric("Latest Accrual Ratio", f"{latest_accrual:.4f}", 
+                      delta=f"{latest_accrual - avg_accrual:.4f}", delta_color="inverse")
         with col2:
             st.metric("NI-OCF Correlation", f"{correlation:.2f}")
         with col3:
-            st.metric("Avg Rev Growth", f"{company_data['Rev_Growth'].mean():.2%}")
+            st.metric("Avg Revenue Growth", f"{data['Rev_Growth'].mean():.2%}")
 
-        # Tabs for Depth (Keep original content)
-        t1, t2, t3 = st.tabs(["📊 Performance Trends", "🔍 Benchmarking", "🔬 Statistical Insights"])
+        # Analysis Workspace
+        tab1, tab2, tab3 = st.tabs(["📈 Financial Trends", "📊 Peer Benchmarking", "🔬 Statistical Insights"])
         
-        with t1:
+        with tab1:
+            st.subheader(f"Earnings vs. Cash Flow: {ticker}")
             fig_trends = go.Figure()
-            fig_trends.add_trace(go.Scatter(x=company_data['fyear'], y=company_data['ni'], name="Net Income", line=dict(width=4, color='#003366')))
-            fig_trends.add_trace(go.Scatter(x=company_data['fyear'], y=company_data['oancf'], name="Op. Cash Flow", line=dict(dash='dot', width=4, color='#FF4B4B')))
+            fig_trends.add_trace(go.Scatter(x=data['fyear'], y=data['ni'], name="Net Income", line=dict(color='#003366', width=4)))
+            fig_trends.add_trace(go.Scatter(x=data['fyear'], y=data['oancf'], name="Op. Cash Flow", line=dict(color='#FF4B4B', dash='dot', width=4)))
             fig_trends.update_layout(template="plotly_white", hovermode="x unified")
             st.plotly_chart(fig_trends, use_container_width=True)
 
-        with t2:
-            st.subheader("Industry Peer Ranking")
+        with tab2:
+            st.subheader("Industry Peer Ranking (Avg Accrual Ratio)")
             rank_fig = px.bar(firm_summary.sort_values('Avg_Accrual_Ratio'), x='tic', y='Avg_Accrual_Ratio', 
                               color='Avg_Accrual_Ratio', color_continuous_scale='RdYlGn_r')
-            if show_benchmark:
-                rank_fig.add_hline(y=firm_summary['Avg_Accrual_Ratio'].median(), line_dash="dash", line_color="black")
+            if show_industry_avg:
+                rank_fig.add_hline(y=firm_summary['Avg_Accrual_Ratio'].median(), line_dash="dash", annotation_text="Sector Median")
             st.plotly_chart(rank_fig, use_container_width=True)
             
-        with t3:
-            # Original statistical logic
-            col_a, col_b = st.columns(2)
-            with col_a:
+        with tab3:
+            col_m, col_a = st.columns(2)
+            with col_m:
                 st.markdown("**Correlation Matrix**")
-                st.write(company_data[['ni', 'oancf', 'Accrual_Ratio', 'Rev_Growth']].corr())
-            with col_b:
-                st.markdown("**Analyst Summary**")
+                st.write(data[['ni', 'oancf', 'Accrual_Ratio', 'Rev_Growth']].corr())
+            with col_a:
+                st.markdown("**Automated Analyst Insight**")
                 if correlation < 0.5:
-                    st.error(f"Alert: {ticker} shows a weak NI-OCF alignment. This suggests profits may rely on non-cash accruals.")
+                    st.warning("Analysis: Low correlation suggests profits are largely driven by non-cash adjustments.")
                 else:
-                    st.success(f"Insight: {ticker} maintains a solid link between reported profits and cash reality.")
+                    st.info("Analysis: High correlation confirms that net income is supported by genuine cash inflows.")
 
-elif nav_choice == "Methodology":
-    st.header("📖 Academic Methodology")
-    st.latex(r"Accrual Ratio = \frac{Net Income - Operating Cash Flow}{Average Total Assets}")
-    st.markdown("""
-    Based on **Sloan (1996)**, we evaluate Earnings Quality by checking the 'cash backing' of reported profits. 
-    High accruals relative to assets often signal lower future returns and reporting risks.
-    """)
+        # --- Methodology Footer ---
+        st.divider()
+        with st.expander("📖 Academic Methodology & Calculations"):
+            st.markdown("### The Sloan Accrual Anomaly")
+            st.latex(r"Accrual Ratio = \frac{Net Income - Operating Cash Flow}{Average Total Assets}")
+            st.markdown("""
+            **Theory:** Based on Sloan (1996), accruals represent the portion of earnings not yet realized in cash. 
+            A high ratio or a decoupling of Profit and Cash (Low Correlation) signals potential earnings management risks.
+            """)
 
-else: # Global View with Dynamic Highlighting
-    st.header("🌐 Global Industry Distribution")
-    st.markdown("Your selected firm is highlighted to show its position within the sector.")
-    
-    # Dynamic Highlighting Logic
-    df['Status'] = df['tic'].apply(lambda x: 'Selected Firm' if x == ticker_choice else 'Industry Peers')
-    
-    fig_global = px.scatter(
-        df, x='Rev_Growth', y='Accrual_Ratio', color='Status',
-        color_discrete_map={'Selected Firm': '#FF4B4B', 'Industry Peers': '#003366'},
-        hover_name='tic', size='at', template="plotly_white"
-    )
-    st.plotly_chart(fig_global, use_container_width=True)
-
-st.divider()
-st.caption("Data Science Portfolio | ACC102 Financial Analysis Project")
+st.caption("Data Science Portfolio | ACC102: Financial Data Analysis | © 2026")
