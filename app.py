@@ -24,7 +24,6 @@ st.markdown("""
 
 @st.cache_data
 def load_data():
-    # Ensure these filenames match your uploaded files exactly
     df = pd.read_csv("cleaned_data.csv")
     summary = pd.read_csv("firm_summary.csv")
     return df, summary
@@ -35,14 +34,14 @@ except Exception as e:
     st.error(f"Error loading data: {e}")
     st.stop()
 
-# --- 2. SIDEBAR: The Analytical Remote Control ---
+# --- 2. SIDEBAR: Analytical Control Panel ---
 st.sidebar.title("📊 Control Panel")
 
 st.sidebar.subheader("📍 1. Selection")
 ticker_list = sorted(df['tic'].unique())
 ticker = st.sidebar.selectbox("Choose a Firm", ["--- Select a Firm ---"] + ticker_list)
 
-# DYNAMIC TIME FILTER: Automatically detects 2020-2024 from your data
+# DYNAMIC TIME FILTER: Automatically detects range from data (2020-2024)
 min_yr = int(df['fyear'].min())
 max_yr = int(df['fyear'].max())
 year_range = st.sidebar.slider("Timeline Filter", min_yr, max_yr, (min_yr, max_yr))
@@ -50,17 +49,15 @@ year_range = st.sidebar.slider("Timeline Filter", min_yr, max_yr, (min_yr, max_y
 st.sidebar.divider()
 
 st.sidebar.subheader("⚙️ 2. Audit Settings")
-# Slider to control the Red/Green Status Banner
 corr_threshold = st.sidebar.slider(
     "Alert Threshold (Correlation)", 
     0.0, 1.0, 0.6,
     help="Determines the minimum NI-OCF correlation for a 'Healthy' status."
 )
 
-# Checkbox for the Median Line in Tab 2
 show_median = st.sidebar.checkbox("Overlay Industry Median Line", value=True)
 if show_median:
-    st.sidebar.caption("✨ Median line enabled in 'Peer Benchmarking' tab.")
+    st.sidebar.caption("✨ Median line & Highlighting enabled in 'Peer Benchmarking'.")
 
 st.sidebar.divider()
 st.sidebar.info("Methodology: Sloan (1996) Accrual Anomaly")
@@ -69,7 +66,6 @@ st.sidebar.info("Methodology: Sloan (1996) Accrual Anomaly")
 st.title("⚖️ Financial Health & Earnings Quality Auditor")
 
 if ticker == "--- Select a Firm ---":
-    # --- Landing Page ---
     st.markdown("""
         <div class="welcome-card">
             <h1>Welcome to the Professional Audit Portal</h1>
@@ -86,13 +82,12 @@ if ticker == "--- Select a Firm ---":
     st.plotly_chart(fig_intro, use_container_width=True)
 
 else:
-    # --- Data Processing for Selected Firm ---
+    # Data Processing
     data = df[(df['tic'] == ticker) & (df['fyear'].between(year_range[0], year_range[1]))].sort_values('fyear')
     
     if data.empty:
         st.warning("No data available for the selected period.")
     else:
-        # Core Statistics
         correlation = data['ni'].corr(data['oancf']) if len(data) > 1 else 0
         latest_accrual = data['Accrual_Ratio'].iloc[-1]
         avg_accrual = data['Accrual_Ratio'].mean()
@@ -122,11 +117,23 @@ else:
             st.plotly_chart(fig_line, use_container_width=True)
 
         with tab2:
-            st.subheader("Industry Peer Ranking (Accrual Ratio)")
-            rank_fig = px.bar(firm_summary.sort_values('Avg_Accrual_Ratio'), x='tic', y='Avg_Accrual_Ratio', 
-                              color='Avg_Accrual_Ratio', color_continuous_scale='RdYlGn_r')
+            st.subheader("Industry Peer Ranking (Avg Accrual Ratio)")
+            # --- DYNAMIC HIGHLIGHTING LOGIC FOR BAR CHART ---
+            plot_summary = firm_summary.sort_values('Avg_Accrual_Ratio').copy()
+            plot_summary['Highlight'] = plot_summary['tic'].apply(
+                lambda x: 'Selected Firm' if x == ticker else 'Industry Average'
+            )
+
+            rank_fig = px.bar(
+                plot_summary, 
+                x='tic', 
+                y='Avg_Accrual_Ratio', 
+                color='Highlight',
+                color_discrete_map={'Selected Firm': '#FF4B4B', 'Industry Average': '#D3D3D3'},
+                template="plotly_white",
+                labels={'Avg_Accrual_Ratio': 'Average Accrual Ratio', 'tic': 'Company Ticker'}
+            )
             
-            # --- CLEAR & BOLD MEDIAN LINE ---
             if show_median:
                 median_val = firm_summary['Avg_Accrual_Ratio'].median()
                 rank_fig.add_hline(
@@ -134,14 +141,13 @@ else:
                     line_dash="dash", 
                     line_color="#333333", 
                     line_width=2,
-                    annotation_text=f"Industry Median: {median_val:.4f}", 
+                    annotation_text=f"Median: {median_val:.4f}", 
                     annotation_position="top left"
                 )
             st.plotly_chart(rank_fig, use_container_width=True)
 
         with tab3:
-            st.subheader("Dynamic Highlighting within Sector")
-            # Create a status column for dynamic highlighting
+            st.subheader("Dynamic Positioning within Sector")
             df_plot = df.copy()
             df_plot['Highlight'] = df_plot['tic'].apply(lambda x: 'Selected Firm' if x == ticker else 'Industry Peers')
             
@@ -154,7 +160,7 @@ else:
             )
             st.plotly_chart(fig_global, use_container_width=True)
 
-        # --- FOOTER: STATS & METHODOLOGY ---
+        # --- FOOTER ---
         st.divider()
         with st.expander("🔬 Statistical Deep Dive & Academic Methodology"):
             col_m, col_f = st.columns(2)
@@ -164,6 +170,6 @@ else:
             with col_f:
                 st.markdown("**Formula Foundation**")
                 st.latex(r"Accrual Ratio = \frac{Net Income - Operating Cash Flow}{Average Total Assets}")
-                st.write("Sloan (1996) implies that high accruals often precede future earnings reversals.")
+                st.write("Calculated based on Sloan (1996). High values suggest potentially aggressive accounting.")
 
 st.caption("Data Science Portfolio | ACC102: Financial Analysis | © 2026")
