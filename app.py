@@ -5,7 +5,7 @@ import plotly.graph_objects as go
 
 # 1. Page Configuration
 st.set_page_config(
-    page_title="Earnings Quality Auditor Pro", 
+    page_title="Earnings Quality Auditor", 
     page_icon="⚖️", 
     layout="wide"
 )
