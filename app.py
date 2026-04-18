@@ -88,7 +88,7 @@ st.sidebar.divider()
 st.sidebar.info("Methodology: Sloan (1996) Accrual Anomaly")
 
 # --- 3. MAIN DASHBOARD ---
-st.title("⚖️ Earnings Quality Auditor Pro")
+st.title("⚖️ Earnings Quality Auditor ")
 
 if ticker_a == "--- Select a Firm ---":
     st.markdown("""
