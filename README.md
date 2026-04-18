@@ -1,40 +1,130 @@
-# Earnings Quality Analysis & Interactive Tool (Food & Beverage Sector)
+# ⚖️ Earnings Quality Auditor (Food & Beverage Sector)
 
-**Product Link:** https://acc102-data-appuct-ryzcejzwsd3xmrmfa8ie6h.streamlit.app/
+## 🔗 Live Application & Demo
+- **Live App:** https://acc102-data-appuct-ryzcejzwsd3xmrmfa8ie6h.streamlit.app/
+- **Demo Video:** [Insert your video link here]
 
 ---
 
-## 1. Problem & User
-This project investigates whether revenue growth serves as a reliable indicator of financial risk in the "stable" Food & Beverage sector. It provides an interactive diagnostic tool for **investors and financial analysts** to identify potential "earnings decoupling"—where reported profits are not supported by cash flows.
+## 1. Problem & Target Users
+
+This project investigates earnings quality in the food and beverage industry and examines whether revenue growth can be used as a reliable indicator of financial risk.
+
+Although the sector is generally considered stable, recent years have seen the entry of many emerging firms. This raises the question of whether traditional classifications such as “growth” and “mature” firms can adequately explain differences in earnings quality.
+
+The target users are **investors and financial analysts**, who need to evaluate firm performance beyond simple growth metrics and identify potential financial risks.
+
+---
 
 ## 2. Data
-* **Source:** WRDS Compustat Database.
-* **Access Date:** April 14, 2026.
-* **Key Fields:** Net Income (`ni`), Operating Cash Flow (`oancf`), Total Assets (`at`), Revenue Growth (`Rev_Growth`).
 
-## 3. Methods
-1. **Data Engineering:** Cleaned and pre-processed financial data using `pandas`, calculating the **Accrual Ratio** based on Sloan’s (1996) methodology.
-2. **Analysis:** Performed grouping and statistical trend analysis in a Jupyter Notebook.
-3. **Application:** Developed a `Streamlit` dashboard using `plotly` for dynamic firm positioning and sensitivity-based risk auditing.
+- **Source:** WRDS Compustat Database  
+- **Access Date:** April 2026  
+- **Sample:** 10 food and beverage firms (2020–2024)
 
-## 4. Key Findings
-* **Label Ineffectiveness:** Traditional "Growth vs. Mature" classifications fail to explain earnings quality variations in this sector.
-* **Firm-Level Variance:** Individual corporate governance and accounting practices are more significant than industry-wide trends.
-* **Decoupling Risk:** High-growth firms often exhibit lower correlation between profits and cash, necessitating case-by-case auditing.
+### Key Variables:
+- Net Income (`ni`)
+- Operating Cash Flow (`oancf`)
+- Total Assets (`at`)
+- Revenue (`revt`)
 
-## 5. How to Run
-To run this application locally:
-1. Clone the repository and navigate to the folder.
-2. Install dependencies: `pip install -r requirements.txt`
-3. Launch the app: `streamlit run app.py`
+### Constructed Metrics:
+- **Accruals = Net Income – Operating Cash Flow**
+- **Accrual Ratio = Accruals / Total Assets**
+- **Revenue Growth = Percentage change in revenue**
 
-## 6. Product Link / Demo Video
-* **Live App:** [Click Here to Access](https://acc102-data-appuct-ryzcejzwsd3xmrmfa8ie6h.streamlit.app/)
-* **Demo Video:** [Insert your video link here]
-
-## 7. Limitations & Next Steps
-* **Limitations:** Small sample size ($n=10$) and reliance on static historical data (2020–2024).
-* **Next Steps:** Integrate real-time Financial APIs (e.g., Yahoo Finance) and expand to cross-sector comparisons (e.g., Tech vs. Consumer Staples).
+The dataset is standardised and comparable across firms, making it suitable for firm-level financial analysis.
 
 ---
-*Disclaimer: AI assistance was used for code optimization and documentation refinement (Reflected in report).*
+
+## 3. Methodology
+
+This project combines data analysis with interactive application development:
+
+### Data Processing
+- Cleaned and filtered financial data using **Python (pandas)**
+- Removed missing values to ensure data quality
+
+### Financial Analysis
+- Constructed earnings quality indicators based on **Sloan (1996) Accrual Anomaly**
+- Measured:
+  - Accrual Ratio (earnings quality proxy)
+  - Revenue Growth
+  - Correlation between Net Income and Operating Cash Flow
+
+### Statistical Logic
+- Compared firms using:
+  - Group-level classification (Growth vs. Mature)
+  - Firm-level variation analysis
+- Used correlation analysis and visualisation to identify patterns
+
+### Application Development
+- Built an interactive dashboard using **Streamlit**
+- Visualised data using **Plotly**
+
+---
+
+## 4. Key Features (Interactive Tool)
+
+The Streamlit application provides a professional financial audit dashboard:
+
+### 🔹 Firm-Level Analysis
+- Select a company to evaluate earnings quality
+- View:
+  - Net Income vs Operating Cash Flow trends
+  - Accrual Ratio metrics
+  - Revenue Growth
+
+### 🔹 Risk Detection System
+- Dynamic **correlation-based audit signal**
+  - Low correlation → potential earnings quality risk
+  - High correlation → stronger earnings reliability
+
+### 🔹 Peer Benchmarking
+- Compare firms using:
+  - Industry ranking (Accrual Ratio)
+  - Median benchmark line
+
+### 🔹 Global Positioning
+- Scatter plot of:
+  - Revenue Growth vs Accrual Ratio
+- Visualise firm positioning within the sector
+
+### 🔹 Comparative Analysis (Optional)
+- Compare two firms directly
+- Identify differences in earnings quality trends
+
+---
+
+## 5. Key Findings
+
+- **No clear relationship** exists between revenue growth and earnings quality  
+- **No statistically significant difference** between growth and mature firms  
+- **Firm-level variation dominates** industry classification  
+
+This suggests that:
+
+> Earnings quality should be analysed at the **individual firm level**, rather than relying on broad group classifications.
+
+---
+
+## 6. Project Structure
+
+The repository includes:
+
+- `app.py` → Main Streamlit application  
+- `notebook.ipynb` → Data cleaning and analysis workflow  
+- `cleaned_data.csv` → Processed dataset  
+- `firm_summary.csv` → Firm-level summary metrics  
+- `requirements.txt` → Python dependencies  
+- `README.md` → Project documentation  
+
+---
+
+## 7. How to Run the Project
+
+To run the application locally:
+
+```bash
+pip install -r requirements.txt
+streamlit run app.py
