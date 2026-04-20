@@ -57,5 +57,4 @@ The project follows a robust Python-based data pipeline:
 ---
 
 **Author:** Tingxuan Zhang 
-**Module:** ACC102 Mini Assignment (2025-26 S2)ui Zhang]
 **Module:** ACC102 Mini Assignment (2025-26 S2)
