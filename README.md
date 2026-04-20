@@ -45,8 +45,8 @@ The project follows a robust Python-based data pipeline:
 ## 6. Product Link / Demo
 
 - **Live App:** https://acc102-data-appuct-ryzcejzwsd3xmrmfa8ie6h.streamlit.app/
-- **Demo Video (1–3 min):** [Paste your Mediasite video link here]
-- **GitHub Repository:** https://github.com/tingxuanzhang24/acc102-data-product
+- **Demo Video (1–3 min):** https://video.xjtlu.edu.cn/Mediasite/Channel/556fdc2c32b340f58d12b8179e0284435f/headless/watch/1f650ebc77af4995892bb5f59380cb231d
+- **GitHub Repository:** https://github.com/tingxuanzhang24/acc102-data-product.git
 
 ## 7. Limitations & Next Steps
 
